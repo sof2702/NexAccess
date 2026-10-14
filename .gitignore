@@ -1,0 +1,24 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.db
+*.db-journal
+/secrets/
+.env
+.history/
+*.log
+
+# Visual Studio
+.vscode/
+*.code-workspace
+
+# Build outputs
+publish/
+
+# Rider
+.idea/
+
+# Mac
+.DS_Store
