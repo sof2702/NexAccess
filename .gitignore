@@ -22,3 +22,13 @@ publish/
 
 # Mac
 .DS_Store
+
+# Testing
+TestResults/
+coverage*/
+*.trx
+
+# Secretos locales
+appsettings.*.local.json
+*.pfx
+

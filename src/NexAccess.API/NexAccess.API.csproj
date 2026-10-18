@@ -1,16 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-	<TargetFramework>net10.0</TargetFramework>
-	<Nullable>enable</Nullable>
-	<ImplicitUsings>enable</ImplicitUsings>
-	<RootNamespace>NexAccess.API</RootNamespace>
-  </PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
-	<PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
-	<ProjectReference Include="..\NexAccess.Application\NexAccess.Application.csproj" />
-	<ProjectReference Include="..\NexAccess.Infrastructure\NexAccess.Infrastructure.csproj" />
-	<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
-	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
-	<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <ProjectReference Include="..\NexAccess.Application\NexAccess.Application.csproj" />
+    <ProjectReference Include="..\NexAccess.Infrastructure\NexAccess.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.0" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NexAccess.API</RootNamespace>
+  </PropertyGroup>
 </Project>
