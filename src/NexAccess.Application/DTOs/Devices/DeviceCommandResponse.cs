@@ -1,6 +1,11 @@
+﻿using System.Text.Json.Serialization;
+
 namespace NexAccess.Application.DTOs.Devices;
 
-public sealed record DeviceCommandResponse(string Command, long? EnrollmentId = null, DateTime? ExpiresAt = null)
+public sealed record DeviceCommandResponse(
+    string Command,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? EnrollmentId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateTime? ExpiresAt = null)
 {
     public const string None = "NONE";
 
