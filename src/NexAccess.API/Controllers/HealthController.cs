@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace NexAccess.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[AllowAnonymous]
 public class HealthController : ControllerBase
 {
     [HttpGet]

@@ -13,5 +13,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>NexAccess.API</RootNamespace>
+    <UserSecretsId>69396224-a887-41cc-8c4a-8c5199ac2ce7</UserSecretsId>
   </PropertyGroup>
 </Project>
