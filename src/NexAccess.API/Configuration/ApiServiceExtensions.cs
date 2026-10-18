@@ -7,7 +7,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using NexAccess.API.Middleware;
 using NexAccess.Application.Interfaces;
+using NexAccess.Application.Interfaces.Repositories;
 using NexAccess.Application.Services;
+using NexAccess.Domain.Enums;
 using NexAccess.Infrastructure.Security;
 
 namespace NexAccess.API.Configuration;
@@ -91,6 +93,7 @@ public static class ApiServiceExtensions
                 };
                 options.Events = new JwtBearerEvents
                 {
+                    OnTokenValidated = ValidateActiveUserAsync,
                     OnChallenge = async context =>
                     {
                         context.HandleResponse();
@@ -102,5 +105,17 @@ public static class ApiServiceExtensions
             });
 
         services.AddAuthorization();
+    }
+
+    private static async Task ValidateActiveUserAsync(TokenValidatedContext context)
+    {
+        var userId = context.Principal?.FindUserId();
+        var role = context.Principal?.FindFirst(JwtTokenService.RoleClaim)?.Value;
+        var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+        var user = userId.HasValue ? await users.GetByIdAsync(userId.Value, context.HttpContext.RequestAborted) : null;
+        if (user is null || !user.IsActive || SystemRoles.From(user.SystemRole) != role)
+        {
+            context.Fail("El usuario no existe, está inactivo o cambió de rol.");
+        }
     }
 }

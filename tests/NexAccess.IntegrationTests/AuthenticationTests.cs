@@ -80,6 +80,24 @@ public class AuthenticationTests(NexAccessApiFactory factory)
     }
 
     [Fact]
+    public async Task Token_of_deactivated_user_stops_working_immediately()
+    {
+        var admin = await ApiClient.AdminAsync(factory);
+        var username = ApiClient.Unique("seg").ToLowerInvariant();
+        const string password = "Seguridad-Prueba-123";
+        var user = await admin.PostAsync("/api/v1/users", new { username, password, role = "SEGURIDAD" }).ExpectAsync(HttpStatusCode.Created);
+
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await ApiClient.LoginAsync(client, username, password));
+        await client.GetAsync("/api/v1/devices").ExpectAsync(HttpStatusCode.OK);
+
+        await admin.PatchAsync($"/api/v1/users/{user["id"]}/status", new { isActive = false }).ExpectAsync(HttpStatusCode.OK);
+
+        await client.GetAsync("/api/v1/devices").ExpectAsync(HttpStatusCode.Unauthorized);
+        await client.PostAsync("/api/v1/auth/login", new { username, password }).ExpectAsync(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task Device_key_cannot_use_admin_endpoints_and_jwt_cannot_use_device_endpoints()
     {
         var scenario = await Scenario.CreateAsync(factory);
