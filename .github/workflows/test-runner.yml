@@ -1,0 +1,27 @@
+name: NexAccess - Test Runner
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-runner:
+    name: Verificar Rocky Linux
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Verificar usuario
+        run: whoami
+
+      - name: Verificar sistema operativo
+        run: cat /etc/os-release
+
+      - name: Verificar herramientas
+        run: |
+          git --version
+          docker --version
+
+      - name: Confirmar runner
+        run: echo "NexAccess runner funcionando correctamente"
