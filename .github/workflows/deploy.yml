@@ -1,40 +1,40 @@
-name: NexAccess - Deploy
+
+name: NexAccess - CI/CD
 
 on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: nexaccess-deploy
-  cancel-in-progress: false
+  packages: write
 
 jobs:
-  deploy:
-    name: Desplegar NexAccess
-    runs-on: [self-hosted, Linux, X64]
-
-    timeout-minutes: 20
+  build:
+    name: Build y publicar imagen
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Mostrar commit
-        run: |
-          echo "Commit: ${{ github.sha }}"
-          echo "Rama: ${{ github.ref_name }}"
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
 
-      - name: Ejecutar despliegue
-        run: |
-          sudo -n /usr/bin/systemctl start nexaccess-deploy.service
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Verificar API
-        run: |
-          curl --fail --silent --show-error \
-            --retry 10 \
-            --retry-delay 2 \
-            http://127.0.0.1:8060/api/v1/health
+      - name: Iniciar sesión en GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir y publicar NexAccess
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ghcr.io/sof2702/nexaccess:dev
 
