@@ -4,20 +4,17 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
-concurrency:
-  group: nexaccess-deploy
-  cancel-in-progress: false
-
 jobs:
 
   # ==========================================
-  # BUILD Y PUBLICACIÓN EN GHCR
+  # BUILD - COMPILAR Y PUBLICAR EN GHCR
   # ==========================================
   build:
     name: Build y publicar imagen
@@ -37,7 +34,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Construir y publicar NexAccess
+      - name: Construir y publicar imagen
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -46,7 +43,7 @@ jobs:
           tags: ghcr.io/sof2702/nexaccess:dev
 
   # ==========================================
-  # DEPLOY EN ROCKY LINUX
+  # DEPLOY - ROCKY LINUX
   # ==========================================
   deploy:
     name: Desplegar en Rocky Linux
@@ -55,66 +52,17 @@ jobs:
     timeout-minutes: 5
 
     steps:
-
-      - name: Iniciar despliegue
+      - name: Actualizar NexAccess
         shell: bash
         run: |
-          set -euo pipefail
-
-          SERVICE="nexaccess-deploy.service"
-
-          # Registrar cuándo comienza esta ejecución.
-          BEFORE=$(systemctl show "$SERVICE" -p ExecMainStartTimestampMonotonic --value)
-          BEFORE=${BEFORE:-0}
-
-          sudo -n /usr/bin/systemctl --no-block start "$SERVICE" \
-            </dev/null >/dev/null 2>&1
-
-          echo "Solicitud de despliegue enviada."
-
-          # Esperar hasta 120 segundos y comprobar una ejecución nueva.
-          for i in $(seq 1 60); do
-            START=$(systemctl show "$SERVICE" -p ExecMainStartTimestampMonotonic --value)
-            START=${START:-0}
-
-            STATE=$(systemctl show "$SERVICE" -p ActiveState --value)
-            RESULT=$(systemctl show "$SERVICE" -p Result --value)
-            STATUS=$(systemctl show "$SERVICE" -p ExecMainStatus --value)
-
-            if [[ "$START" =~ ^[0-9]+$ ]] &&
-               [[ "$BEFORE" =~ ^[0-9]+$ ]] &&
-               (( START > BEFORE )); then
-
-              if [[ "$STATE" == "inactive" &&
-                    "$RESULT" == "success" &&
-                    "$STATUS" == "0" ]]; then
-                echo "Despliegue finalizado correctamente."
-                exit 0
-              fi
-
-              if [[ "$STATE" == "failed" ||
-                    "$RESULT" == "exit-code" ||
-                    "$RESULT" == "timeout" ]]; then
-                echo "ERROR: el servicio de despliegue falló."
-                exit 1
-              fi
-            fi
-
-            sleep 2
-          done
-
-          echo "ERROR: tiempo de espera agotado."
-          exit 1
+          sudo -n /opt/nexaccess/scripts/deploy-ci.sh
 
       - name: Verificar API
         shell: bash
         run: |
           curl --fail --silent --show-error \
-            --retry 10 \
-            --retry-delay 2 \
-            --retry-connrefused \
             http://127.0.0.1:8060/api/v1/health
 
       - name: Confirmar despliegue
-        run: echo "NexAccess desplegado correctamente en Rocky Linux"
+        run: echo "NexAccess desplegado correctamente"
 
