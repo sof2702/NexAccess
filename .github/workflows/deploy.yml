@@ -1,17 +1,25 @@
-
 name: NexAccess - CI/CD
 
 on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: nexaccess-deploy
+  cancel-in-progress: false
+
 jobs:
+
+  # ==========================================
+  # BUILD - GITHUB ACTIONS
+  # ==========================================
   build:
     name: Build y publicar imagen
     runs-on: ubuntu-latest
@@ -37,4 +45,31 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ghcr.io/sof2702/nexaccess:dev
+
+  # ==========================================
+  # DEPLOY - ROCKY LINUX
+  # ==========================================
+  deploy:
+    name: Desplegar en Rocky Linux
+    needs: build
+
+    runs-on: [self-hosted, Linux, X64]
+
+    timeout-minutes: 20
+
+    steps:
+      - name: Actualizar NexAccess
+        run: |
+          sudo -n /usr/bin/systemctl start nexaccess-deploy.service
+
+      - name: Verificar API
+        run: |
+          curl --fail --silent --show-error \
+            --retry 10 \
+            --retry-delay 2 \
+            http://127.0.0.1:8060/api/v1/health
+
+      - name: Confirmar despliegue
+        run: |
+          echo "NexAccess desplegado correctamente en Rocky Linux"
 
