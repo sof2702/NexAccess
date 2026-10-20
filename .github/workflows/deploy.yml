@@ -1,0 +1,40 @@
+name: NexAccess - Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nexaccess-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Desplegar NexAccess
+    runs-on: [self-hosted, Linux, X64]
+
+    timeout-minutes: 20
+
+    steps:
+      - name: Mostrar commit
+        run: |
+          echo "Commit: ${{ github.sha }}"
+          echo "Rama: ${{ github.ref_name }}"
+
+      - name: Ejecutar despliegue
+        run: |
+          sudo -n /usr/bin/systemctl start nexaccess-deploy.service
+
+      - name: Verificar API
+        run: |
+          curl --fail --silent --show-error \
+            --retry 10 \
+            --retry-delay 2 \
+            http://127.0.0.1:8060/api/v1/health
+
