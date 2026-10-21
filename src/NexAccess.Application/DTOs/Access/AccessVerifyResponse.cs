@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using NexAccess.Domain.Enums;
 
 namespace NexAccess.Application.DTOs.Access;
@@ -8,7 +8,8 @@ public sealed record AccessVerifyResponse(
     string Action,
     string Reason,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? DurationMs = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] AttendanceMark? Attendance = null)
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] AttendanceMark? Attendance = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? EmployeeName = null)
 {
     public const string OpenAction = "OPEN";
     public const string MarkAction = "MARK";

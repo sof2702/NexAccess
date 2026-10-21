@@ -89,9 +89,11 @@ public class AccessService
             return AccessVerifyResponse.Deny(reason);
         }
 
+        var employeeName = accessEvent.Employee?.FullName;
+
         return device.ControlsAccess
-            ? new AccessVerifyResponse(true, AccessVerifyResponse.OpenAction, reason, _options.OpenDurationMs, mark)
-            : new AccessVerifyResponse(true, AccessVerifyResponse.MarkAction, reason, null, mark);
+            ? new AccessVerifyResponse(true, AccessVerifyResponse.OpenAction, reason, _options.OpenDurationMs, mark, employeeName)
+            : new AccessVerifyResponse(true, AccessVerifyResponse.MarkAction, reason, null, mark, employeeName);
     }
 
     private async Task<string> DecideAsync(
@@ -140,6 +142,8 @@ public class AccessService
         {
             return AccessReason.EmployeeInactive;
         }
+
+        accessEvent.Employee = credential.Employee;
 
         return device.ControlsAccess
             ? await DecideAreaAsync(device, credential.EmployeeId, now, cancellationToken)
