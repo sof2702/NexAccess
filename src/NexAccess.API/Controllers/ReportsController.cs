@@ -7,6 +7,7 @@ using NexAccess.Application.Services.Reports;
 using NexAccess.Domain.Enums;
 using NexAccess.Application.Services;
 using System.Globalization;
+using NexAccess.Application.DTOs.Devices;
 
 namespace NexAccess.API.Controllers;
 
@@ -18,7 +19,8 @@ public sealed class ReportsController(
     ReportService reports,
     IPdfReportGenerator pdfGenerator,
     AuditService audit,
-    IUnitOfWork unitOfWork) : ControllerBase
+    IUnitOfWork unitOfWork,
+    DeviceService devices) : ControllerBase
 {
 
 [HttpGet("options")]
@@ -110,7 +112,26 @@ public IActionResult GetOptions()
 });
 }
 
+[HttpGet("devices")]
+public async Task<IActionResult> GetReportDevices(
+    [FromQuery] DeviceQuery query,
+    CancellationToken cancellationToken)
+{
+    var result = await devices.SearchAsync(query, cancellationToken);
 
+    return Ok(new
+    {
+        items = result.Items.Select(d => new
+        {
+            id = d.Id,
+            code = d.Code,
+            name = d.Name
+        }),
+        total = result.TotalItems,
+        page = result.Page,
+        pageSize = result.PageSize
+    });
+}
 
 
     [HttpPost("generate")]
