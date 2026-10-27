@@ -81,14 +81,33 @@ public IActionResult GetOptions()
         });
     }
 
-    return Ok(new
+   
+	return Ok(new
+{
+    reports = availableReports,
+
+    filterValues = new
     {
-        reports = availableReports,
-        maxReportDays = 366,
-        defaultFormat = "Pdf",
-        supportsSummary = true,
-        supportsDetails = true
-    });
+        attendanceTypes = new[]
+        {
+            "Entrada",
+            "Salida"
+        },
+
+        attendanceSources = Enum.GetNames<AttendanceSource>(),
+
+        accessResults = new[]
+        {
+            "Autorizado",
+            "Rechazado"
+        }
+    },
+
+    maxReportDays = 366,
+    defaultFormat = "Pdf",
+    supportsSummary = true,
+    supportsDetails = true
+});
 }
 
 
