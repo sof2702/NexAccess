@@ -2,7 +2,9 @@ using NexAccess.API.Configuration;
 using NexAccess.API.Middleware;
 using NexAccess.Application;
 using NexAccess.Infrastructure;
+using QuestPDF.Infrastructure;
 
+QuestPDF.Settings.License = LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication(builder.Configuration);

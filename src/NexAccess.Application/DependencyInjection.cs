@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NexAccess.Application.Options;
 using NexAccess.Application.Services;
+using NexAccess.Application.Services.Reports;
 
 namespace NexAccess.Application;
 
@@ -28,6 +29,8 @@ public static class DependencyInjection
         services.AddScoped<AttendanceService>();
         services.AddScoped<AccessEventService>();
         services.AddScoped<AccessService>();
+        services.AddScoped<ReportService>();
+        services.AddScoped<ReportGroupingService>();
         return services;
     }
 }

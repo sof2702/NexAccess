@@ -31,8 +31,30 @@ public class AttendanceRepository : IAttendanceRepository
     public Task<(IReadOnlyList<AttendanceRecord> Items, int Total)> SearchAsync(AttendanceQuery query, CancellationToken cancellationToken = default) =>
         Filter(query).OrderByDescending(m => m.OccurredAt).ThenByDescending(m => m.Id).ToPageAsync(query, cancellationToken);
 
-    public async Task<IReadOnlyList<AttendanceRecord>> ListAsync(AttendanceQuery query, int limit, CancellationToken cancellationToken = default) =>
-        await Filter(query).OrderBy(m => m.EmployeeId).ThenBy(m => m.OccurredAt).Take(limit).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyList<AttendanceRecord>> ListAsync(
+    AttendanceQuery query,
+    int limit,
+    CancellationToken cancellationToken = default)
+{
+    if (limit <= 0 || limit == int.MaxValue)
+        throw new ArgumentOutOfRangeException(nameof(limit));
+
+    var records = await Filter(query)
+        .OrderBy(m => m.EmployeeId)
+        .ThenBy(m => m.OccurredAt)
+        .ThenBy(m => m.Id)
+        .Take(limit + 1)
+        .ToListAsync(cancellationToken);
+
+    if (records.Count > limit)
+    {
+        throw new InvalidOperationException(
+            $"El reporte supera el máximo permitido de {limit:N0} registros. " +
+            "Reducí el rango de fechas o aplicá filtros adicionales.");
+    }
+
+    return records;
+}
 
     public void Add(AttendanceRecord record) => _context.AttendanceRecords.Add(record);
 

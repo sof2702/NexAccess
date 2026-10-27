@@ -8,6 +8,7 @@ using NexAccess.Infrastructure.Persistence;
 using NexAccess.Infrastructure.Persistence.Repositories;
 using NexAccess.Infrastructure.Security;
 using NexAccess.Infrastructure.Services;
+using NexAccess.Infrastructure.Reports;
 
 namespace NexAccess.Infrastructure;
 
@@ -47,13 +48,14 @@ public static class DependencyInjection
         services.AddScoped<IDeviceCommandRepository, DeviceCommandRepository>();
         services.AddScoped<IAccessEventRepository, AccessEventRepository>();
         services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
-
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IDeviceKeyService, DeviceKeyService>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddScoped<IPdfReportGenerator, QuestPdfReportGenerator>();
         return services;
     }
 }

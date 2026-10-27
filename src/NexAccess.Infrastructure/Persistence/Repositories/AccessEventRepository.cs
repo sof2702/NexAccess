@@ -17,8 +17,29 @@ public class AccessEventRepository : IAccessEventRepository
     public Task<(IReadOnlyList<AccessEvent> Items, int Total)> SearchAsync(AccessEventQuery query, CancellationToken cancellationToken = default) =>
         Filter(query).OrderByDescending(e => e.OccurredAt).ThenByDescending(e => e.Id).ToPageAsync(query, cancellationToken);
 
-    public async Task<IReadOnlyList<AccessEvent>> ListAsync(AccessEventQuery query, int limit, CancellationToken cancellationToken = default) =>
-        await Filter(query).OrderBy(e => e.OccurredAt).ThenBy(e => e.Id).Take(limit).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyList<AccessEvent>> ListAsync(
+    AccessEventQuery query,
+    int limit,
+    CancellationToken cancellationToken = default)
+{
+    if (limit <= 0 || limit == int.MaxValue)
+        throw new ArgumentOutOfRangeException(nameof(limit));
+
+    var events = await Filter(query)
+        .OrderBy(e => e.OccurredAt)
+        .ThenBy(e => e.Id)
+        .Take(limit + 1)
+        .ToListAsync(cancellationToken);
+
+    if (events.Count > limit)
+    {
+        throw new InvalidOperationException(
+            $"El reporte supera el máximo permitido de {limit:N0} registros. " +
+            "Reducí el rango de fechas o aplicá filtros adicionales.");
+    }
+
+    return events;
+}
 
     public void Add(AccessEvent accessEvent) => _context.AccessEvents.Add(accessEvent);
 
