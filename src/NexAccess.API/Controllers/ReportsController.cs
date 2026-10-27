@@ -20,6 +20,80 @@ public sealed class ReportsController(
     AuditService audit,
     IUnitOfWork unitOfWork) : ControllerBase
 {
+
+[HttpGet("options")]
+public IActionResult GetOptions()
+{
+    var isAdmin = User.IsInRole(SystemRoles.Admin);
+    var isRrhh = User.IsInRole(SystemRoles.Rrhh);
+    var isSeguridad = User.IsInRole(SystemRoles.Seguridad);
+
+    var availableReports = new List<object>();
+
+    if (isAdmin || isRrhh)
+    {
+        availableReports.Add(new
+        {
+            type = ReportType.Attendance.ToString(),
+            name = "Reporte de asistencia",
+            description = "Entradas, salidas y marcaciones de empleados.",
+            formats = new[] { "Json", "Pdf" },
+            filters = new[]
+            {
+                "from", "to", "employeeIds", "deviceIds",
+                "attendanceTypes", "attendanceSources"
+            },
+            groupBy = new[]
+            {
+                "Employee", "Day", "Week", "Month", "Device"
+            },
+            columns = new[]
+            {
+                "occurredAt", "employeeId", "employeeName",
+                "type", "source", "deviceCode", "note"
+            }
+        });
+    }
+
+    if (isAdmin || isSeguridad)
+    {
+        availableReports.Add(new
+        {
+            type = ReportType.AccessEvents.ToString(),
+            name = "Reporte de accesos",
+            description = "Accesos autorizados y rechazados por área.",
+            formats = new[] { "Json", "Pdf" },
+            filters = new[]
+            {
+                "from", "to", "employeeIds", "areaIds",
+                "deviceIds", "accessResults"
+            },
+            groupBy = new[]
+            {
+                "Employee", "Day", "Week", "Month",
+                "Area", "Device"
+            },
+            columns = new[]
+            {
+                "occurredAt", "employeeId", "employeeName",
+                "result", "reason", "areaName", "deviceCode"
+            }
+        });
+    }
+
+    return Ok(new
+    {
+        reports = availableReports,
+        maxReportDays = 366,
+        defaultFormat = "Pdf",
+        supportsSummary = true,
+        supportsDetails = true
+    });
+}
+
+
+
+
     [HttpPost("generate")]
     public async Task<IActionResult> Generate(
         [FromBody] ReportRequest request,
