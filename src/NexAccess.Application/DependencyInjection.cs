@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<AccessEventService>();
         services.AddScoped<AccessService>();
         services.AddScoped<ReportService>();
+        services.AddScoped<EmpresaService>();
         services.AddScoped<ReportGroupingService>();
         return services;
     }

@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IAreaRepository, AreaRepository>();
+        services.AddScoped<IEmpresaRepository, EmpresaRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IAccessPermissionRepository, AccessPermissionRepository>();
         services.AddScoped<ICredentialRepository, CredentialRepository>();
@@ -56,6 +57,7 @@ public static class DependencyInjection
         services.AddSingleton<IDeviceKeyService, DeviceKeyService>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IPdfReportGenerator, QuestPdfReportGenerator>();
+        services.AddScoped<IEmpresaLogoStorage, EmpresaLogoStorage>();
         return services;
     }
 }

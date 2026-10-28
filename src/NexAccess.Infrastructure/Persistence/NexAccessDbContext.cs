@@ -22,6 +22,7 @@ public class NexAccessDbContext : DbContext
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<DeviceCommand> DeviceCommands => Set<DeviceCommand>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<Empresa> Empresas => Set<Empresa>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
