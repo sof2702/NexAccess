@@ -125,6 +125,20 @@ public async Task<EmpresaResponse> SaveLogoAsync(
     return EmpresaResponse.From(empresa);
 }
 
+public async Task<(byte[] Content, string ContentType)> GetLogoAsync(
+    CancellationToken cancellationToken = default)
+{
+    var empresa = await _empresas.GetAsync(cancellationToken);
+
+    if (empresa is null || string.IsNullOrWhiteSpace(empresa.LogoPath))
+    {
+        throw new NotFoundException("Logo de empresa", 0);
+    }
+
+    return await _logoStorage.ReadAsync(
+        empresa.LogoPath,
+        cancellationToken);
+}
 
 }
 

@@ -71,5 +71,42 @@ public class EmpresaLogoStorage : IEmpresaLogoStorage
 
         return $"empresas/{empresaId}/{fileName}";
     }
+
+public async Task<(byte[] Content, string ContentType)> ReadAsync(
+    string logoPath,
+    CancellationToken cancellationToken = default)
+{
+    if (string.IsNullOrWhiteSpace(logoPath))
+        throw new ArgumentException("Ruta de logotipo inválida.");
+
+    var root = Path.GetFullPath(_storageRoot);
+    var fullPath = Path.GetFullPath(
+        Path.Combine(
+            Directory.GetParent(root)!.FullName,
+            logoPath));
+
+    if (!fullPath.StartsWith(
+        root + Path.DirectorySeparatorChar,
+        StringComparison.Ordinal))
+    {
+        throw new UnauthorizedAccessException(
+            "La ruta del logotipo no está permitida.");
+    }
+
+    var content = await File.ReadAllBytesAsync(
+        fullPath, cancellationToken);
+
+    var contentType = Path.GetExtension(fullPath)
+        .ToLowerInvariant() switch
+        {
+            ".png" => "image/png",
+            ".jpg" => "image/jpeg",
+            _ => throw new InvalidOperationException(
+                "Formato de imagen no permitido.")
+        };
+
+    return (content, contentType);
+}
+
 }
 

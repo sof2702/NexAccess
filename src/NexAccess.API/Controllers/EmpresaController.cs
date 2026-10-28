@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexAccess.Application.DTOs.Empresa;
@@ -88,6 +87,16 @@ public async Task<ActionResult<EmpresaResponse>> UploadLogo(
     return Ok(empresa);
 }
 
+// Consultar el logotipo institucional
+[HttpGet("logo")]
+public async Task<IActionResult> GetLogo(
+    CancellationToken cancellationToken)
+{
+    var (content, contentType) =
+        await _empresaService.GetLogoAsync(cancellationToken);
+
+    return File(content, contentType);
+}
 
 }
 
