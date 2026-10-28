@@ -98,5 +98,18 @@ public async Task<IActionResult> GetLogo(
     return File(content, contentType);
 }
 
+
+
+[HttpDelete("logo")]
+[Authorize(Roles = SystemRoles.Admin)]
+public async Task<IActionResult> DeleteLogo(
+    CancellationToken cancellationToken)
+{
+    await _empresaService.DeleteLogoAsync(cancellationToken);
+
+    return NoContent();
+}
+
+
 }
 

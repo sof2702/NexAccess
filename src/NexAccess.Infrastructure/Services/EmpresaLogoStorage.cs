@@ -106,7 +106,39 @@ public async Task<(byte[] Content, string ContentType)> ReadAsync(
         };
 
     return (content, contentType);
+
 }
 
+
+
+public Task DeleteAsync(
+    string logoPath,
+    CancellationToken cancellationToken = default)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+
+    if (string.IsNullOrWhiteSpace(logoPath))
+        return Task.CompletedTask;
+
+    var root = Path.GetFullPath(_storageRoot);
+
+    var fullPath = Path.GetFullPath(
+        Path.Combine(
+            Directory.GetParent(root)!.FullName,
+            logoPath));
+
+    if (!fullPath.StartsWith(
+        root + Path.DirectorySeparatorChar,
+        StringComparison.Ordinal))
+    {
+        throw new UnauthorizedAccessException(
+            "La ruta del logotipo no está permitida.");
+    }
+
+    if (File.Exists(fullPath))
+        File.Delete(fullPath);
+
+    return Task.CompletedTask;
+}
 }
 

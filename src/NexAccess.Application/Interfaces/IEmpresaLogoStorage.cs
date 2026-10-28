@@ -10,4 +10,9 @@ public interface IEmpresaLogoStorage
 Task<(byte[] Content, string ContentType)> ReadAsync(
     string logoPath,
     CancellationToken cancellationToken = default);
+
+Task DeleteAsync(
+    string logoPath,
+    CancellationToken cancellationToken = default);
+
 }

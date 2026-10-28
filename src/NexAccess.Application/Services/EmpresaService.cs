@@ -140,5 +140,34 @@ public async Task<(byte[] Content, string ContentType)> GetLogoAsync(
         cancellationToken);
 }
 
+public async Task DeleteLogoAsync(
+    CancellationToken cancellationToken = default)
+{
+    var empresa = await _empresas.GetAsync(cancellationToken);
+
+    if (empresa is null || string.IsNullOrWhiteSpace(empresa.LogoPath))
+    {
+        throw new NotFoundException("Logo de empresa", 0);
+    }
+
+    var oldLogoPath = empresa.LogoPath;
+
+    // Primero quitar la referencia en PostgreSQL.
+    empresa.LogoPath = null;
+    empresa.UpdatedAt = _clock.UtcNow;
+
+    _audit.Record(
+        "DELETE_LOGO",
+        "empresa",
+        empresa.Id);
+
+    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+    // Después eliminar el archivo físico.
+    await _logoStorage.DeleteAsync(
+        oldLogoPath,
+        cancellationToken);
+}
+
 }
 
