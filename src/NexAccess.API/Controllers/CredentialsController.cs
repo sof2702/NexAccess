@@ -34,4 +34,24 @@ public class CredentialsController(CredentialService credentials) : ControllerBa
     [HttpPost("{id:long}/revoke")]
     public Task<CredentialResponse> Revoke(long id, RevokeCredentialRequest request, CancellationToken cancellationToken) =>
         credentials.RevokeAsync(id, request, cancellationToken);
+
+[HttpPost("digital/{employeeId:long}")]
+public async Task<ActionResult<DigitalCredentialResponse>> IssueDigital(
+    long employeeId,
+    DigitalCredentialRequest request,
+    CancellationToken cancellationToken)
+{
+    var credential = await credentials.IssueDigitalAsync(
+        employeeId,
+        request,
+        cancellationToken);
+
+    Response.Headers.CacheControl = "no-store";
+
+    return StatusCode(
+        StatusCodes.Status201Created,
+        credential);
+}
+
+
 }

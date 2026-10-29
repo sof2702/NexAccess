@@ -6,6 +6,7 @@ using NexAccess.Application.Interfaces.Repositories;
 using NexAccess.Application.Validators;
 using NexAccess.Domain.Entities;
 using NexAccess.Domain.Enums;
+using System.Security.Cryptography;
 
 namespace NexAccess.Application.Services;
 
@@ -134,4 +135,53 @@ public class CredentialService
 
     private async Task<Credential> FindAsync(long id, CancellationToken cancellationToken) =>
         await _credentials.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException("Credencial", id);
+
+
+public async Task<DigitalCredentialResponse> IssueDigitalAsync(
+    long employeeId,
+    DigitalCredentialRequest request,
+    CancellationToken cancellationToken = default)
+{
+    if (employeeId <= 0)
+    {
+        throw new AppValidationException(
+            "employeeId",
+            "El identificador del empleado debe ser válido.");
+    }
+
+    ModelValidator.Validate(request);
+
+    var employee = await _employees.GetByIdAsync(
+        employeeId,
+        cancellationToken)
+        ?? throw new NotFoundException("Empleado", employeeId);
+
+    // 256 bits generados por un generador criptográfico seguro.
+    var code = Convert.ToHexString(
+        RandomNumberGenerator.GetBytes(32));
+
+    var credential = await AddNewAsync(
+        employee,
+        code,
+        CredentialType.Digital,
+        request.Name ?? "Credencial móvil",
+        DateRange.ToUtc(request.ExpiresAt),
+        cancellationToken);
+
+    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+    _audit.Record(
+        "ISSUE_DIGITAL",
+        "credencial",
+        credential.Id,
+        $"empleado={employeeId};tipo=DIGITAL");
+
+    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+    return DigitalCredentialResponse.From(
+        credential,
+        _clock.UtcNow);
+}
+
+
 }

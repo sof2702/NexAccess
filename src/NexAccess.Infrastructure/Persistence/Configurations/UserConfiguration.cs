@@ -16,6 +16,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Username).HasColumnName("username").HasMaxLength(100).IsRequired();
         builder.Property(u => u.PasswordHash).HasColumnName("password_hash").HasMaxLength(255).IsRequired();
         builder.Property(u => u.SystemRole).HasColumnName("rol_sistema").HasMaxLength(30).HasConversion(new UpperSnakeEnumConverter<SystemRole>());
+        builder.Property(u => u.WebAccessEnabled).HasColumnName("acceso_web").IsRequired().HasDefaultValue(false);
+        builder.Property(u => u.MobileAccessEnabled).HasColumnName("acceso_movil").IsRequired().HasDefaultValue(false);
         builder.Property(u => u.IsActive).HasColumnName("activo");
         builder.Property(u => u.LastLoginAt).HasColumnName("ultimo_login");
         builder.Property(u => u.CreatedAt).HasColumnName("created_at");

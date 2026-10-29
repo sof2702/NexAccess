@@ -63,9 +63,11 @@ public class NexAccessApiFactory : WebApplicationFactory<Program>, IAsyncLifetim
             Username = AdminUsername,
             PasswordHash = hasher.Hash(AdminPassword),
             SystemRole = SystemRole.Admin,
-            IsActive = true,
-            CreatedAt = now,
-            UpdatedAt = now
+IsActive = true,
+WebAccessEnabled = true,
+MobileAccessEnabled = false,
+CreatedAt = now,
+UpdatedAt = now
         });
         await context.SaveChangesAsync();
     }

@@ -20,17 +20,72 @@ public static class DatabaseScripts
         }
     }
 
-    public static async Task ApplyAsync(string connectionString)
+public static async Task ApplyAsync(string connectionString)
+{
+    var directory = Path.Combine(
+        FindRepositoryRoot(),
+        "src",
+        "NexAccess.Infrastructure",
+        "Persistence",
+        "Scripts");
+
+    await using var connection = new NpgsqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    // Registrar las migraciones ejecutadas.
+    await using (var command = new NpgsqlCommand("""
+        CREATE TABLE IF NOT EXISTS migracion_test (
+            archivo TEXT PRIMARY KEY,
+            aplicada_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """, connection))
     {
-        var directory = Path.Combine(FindRepositoryRoot(), "src", "NexAccess.Infrastructure", "Persistence", "Scripts");
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync();
-        foreach (var file in Directory.GetFiles(directory, "*.sql").OrderBy(path => path, StringComparer.Ordinal))
+        await command.ExecuteNonQueryAsync();
+    }
+
+    var files = Directory.GetFiles(directory, "*.sql")
+        .OrderBy(path => path, StringComparer.Ordinal);
+
+    foreach (var file in files)
+    {
+        var fileName = Path.GetFileName(file);
+
+        await using var check = new NpgsqlCommand(
+            "SELECT COUNT(*) FROM migracion_test WHERE archivo = @archivo",
+            connection);
+
+        check.Parameters.AddWithValue("archivo", fileName);
+
+        var exists = (long)(await check.ExecuteScalarAsync())!;
+
+        if (exists > 0)
+            continue;
+
+        await using var transaction =
+            await connection.BeginTransactionAsync();
+
+        // Los scripts de NexAccess incluyen BEGIN/COMMIT,
+        // por lo que se ejecutan directamente.
+        await using (var command = new NpgsqlCommand(
+            await File.ReadAllTextAsync(file),
+            connection))
         {
-            await using var command = new NpgsqlCommand(await File.ReadAllTextAsync(file), connection);
             await command.ExecuteNonQueryAsync();
         }
+
+        await using (var register = new NpgsqlCommand(
+            "INSERT INTO migracion_test (archivo) VALUES (@archivo)",
+            connection))
+        {
+            register.Parameters.AddWithValue("archivo", fileName);
+            await register.ExecuteNonQueryAsync();
+        }
+
+        await transaction.CommitAsync();
     }
+}    
+
+
 
     public static async Task<T?> ScalarAsync<T>(string connectionString, string sql, params (string Name, object Value)[] parameters)
     {

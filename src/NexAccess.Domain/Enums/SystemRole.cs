@@ -4,5 +4,6 @@ public enum SystemRole
 {
     Admin,
     Seguridad,
-    Rrhh
+    Rrhh,
+    Empleado
 }

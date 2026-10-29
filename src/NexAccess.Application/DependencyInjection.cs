@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<ReportService>();
         services.AddScoped<EmpresaService>();
         services.AddScoped<ReportGroupingService>();
+        services.AddScoped<MyProfileService>();
+        services.AddScoped<MobileAuthService>();
         return services;
     }
 }

@@ -23,6 +23,8 @@ public class NexAccessDbContext : DbContext
     public DbSet<DeviceCommand> DeviceCommands => Set<DeviceCommand>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<Empresa> Empresas => Set<Empresa>();
+    public DbSet<MobileSession> MobileSessions => Set<MobileSession>();
+    public DbSet<UsedMobileRefreshToken> UsedMobileRefreshTokens  => Set<UsedMobileRefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

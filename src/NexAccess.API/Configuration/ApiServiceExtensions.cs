@@ -11,6 +11,7 @@ using NexAccess.Application.Interfaces.Repositories;
 using NexAccess.Application.Services;
 using NexAccess.Domain.Enums;
 using NexAccess.Infrastructure.Security;
+using System.Security.Claims;
 
 namespace NexAccess.API.Configuration;
 
@@ -107,15 +108,112 @@ public static class ApiServiceExtensions
         services.AddAuthorization();
     }
 
-    private static async Task ValidateActiveUserAsync(TokenValidatedContext context)
+
+private static async Task ValidateActiveUserAsync(
+    TokenValidatedContext context)
+{
+    var principal = context.Principal;
+    var userId = principal?.FindUserId();
+
+    var role = principal?
+        .FindFirst(JwtTokenService.RoleClaim)?.Value;
+
+    var channel = principal?
+        .FindFirst(JwtTokenService.ChannelClaim)?.Value;
+
+    var services = context.HttpContext.RequestServices;
+    var ct = context.HttpContext.RequestAborted;
+
+    var users = services.GetRequiredService<IUserRepository>();
+
+    var user = userId.HasValue
+        ? await users.GetByIdAsync(userId.Value, ct)
+        : null;
+
+    if (user is null || !user.IsActive)
     {
-        var userId = context.Principal?.FindUserId();
-        var role = context.Principal?.FindFirst(JwtTokenService.RoleClaim)?.Value;
-        var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
-        var user = userId.HasValue ? await users.GetByIdAsync(userId.Value, context.HttpContext.RequestAborted) : null;
-        if (user is null || !user.IsActive || SystemRoles.From(user.SystemRole) != role)
-        {
-            context.Fail("El usuario no existe, está inactivo o cambió de rol.");
-        }
+        context.Fail("Usuario inexistente o inactivo.");
+        return;
     }
+
+    // ==========================================
+    // CANAL WEB
+    // ==========================================
+    if (channel == JwtTokenService.WebChannel)
+    {
+        if (!user.WebAccessEnabled ||
+            user.SystemRole == SystemRole.Empleado ||
+            SystemRoles.From(user.SystemRole) != role)
+        {
+            context.Fail("Acceso web no autorizado.");
+            return;
+        }
+
+        return;
+    }
+
+    // ==========================================
+    // CANAL MÓVIL
+    // ==========================================
+    if (channel == JwtTokenService.MobileChannel)
+    {
+        if (!user.MobileAccessEnabled ||
+            role != SystemRoles.Empleado ||
+            !user.EmployeeId.HasValue)
+        {
+            context.Fail("Acceso móvil no autorizado.");
+            return;
+        }
+
+        // Comprobar el empleado vinculado.
+        var employees = services
+            .GetRequiredService<IEmployeeRepository>();
+
+        var employee = await employees.GetByIdAsync(
+            user.EmployeeId.Value,
+            ct);
+
+        if (employee is null || !employee.IsActive)
+        {
+            context.Fail("Empleado inexistente o inactivo.");
+            return;
+        }
+
+        // Obtener la sesión desde el claim sid.
+        var sessionClaim = principal?
+            .FindFirst(JwtTokenService.SessionClaim)?.Value;
+
+        if (!Guid.TryParse(sessionClaim, out var sessionId) ||
+            sessionId == Guid.Empty)
+        {
+            context.Fail("Sesión móvil inválida.");
+            return;
+        }
+
+        var sessions = services
+            .GetRequiredService<IMobileSessionRepository>();
+
+        var session = await sessions.GetByIdAsync(
+            sessionId,
+            ct);
+
+        if (session is null ||
+            session.IsRevoked ||
+            session.UserId != user.Id)
+        {
+            context.Fail("Sesión móvil revocada o inválida.");
+            return;
+        }
+
+        return;
+    }
+
+    // No admitir canales desconocidos ni tokens anteriores
+    // que carezcan del claim channel.
+    context.Fail("Canal de autenticación no reconocido.");
+}
+    
+
+
+
 }

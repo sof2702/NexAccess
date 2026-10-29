@@ -58,5 +58,5 @@ public class ServiceFactory
 
     public DeviceService DeviceService(IDeviceKeyService keys) => new(Devices, Areas, Events, keys, UnitOfWork, Audit(), Clock);
 
-    public AuthService AuthService(IPasswordHasher hasher, ITokenService tokens) => new(Users, hasher, tokens, UnitOfWork, Audit(), Clock);
+    public AuthService AuthService(IPasswordHasher hasher, ITokenService tokens) => new(Users, hasher, tokens, UnitOfWork, Audit(), Clock, Employees);
 }

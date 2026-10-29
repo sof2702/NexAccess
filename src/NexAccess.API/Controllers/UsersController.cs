@@ -33,4 +33,18 @@ public class UsersController(UserService users) : ControllerBase
         await users.ChangePasswordAsync(id, request, cancellationToken);
         return NoContent();
     }
+
+
+[HttpPut("{id:long}/access")]
+public Task<UserResponse> UpdateAccess(
+    long id,
+    UpdateUserAccessRequest request,
+    CancellationToken cancellationToken)
+{
+    return users.UpdateAccessAsync(
+        id,
+        request,
+        cancellationToken);
+}
+
 }

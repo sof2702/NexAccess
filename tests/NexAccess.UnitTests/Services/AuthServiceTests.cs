@@ -18,7 +18,16 @@ public class AuthServiceTests
 
     public AuthServiceTests()
     {
-        _user = new User { Id = 7, Username = "rrhh", PasswordHash = _hasher.Hash("Clave-Segura-123"), SystemRole = SystemRole.Rrhh, IsActive = true };
+        _user = new User
+{
+    Id = 7,
+    Username = "rrhh",
+    PasswordHash = _hasher.Hash("Clave-Segura-123"),
+    SystemRole = SystemRole.Rrhh,
+    IsActive = true,
+    WebAccessEnabled = true,
+    MobileAccessEnabled = false
+};
         _factory.Users.GetByUsernameAsync("rrhh", Arg.Any<CancellationToken>()).Returns(_user);
         _tokens.Create(_user).Returns(new IssuedToken("token-de-prueba", TestData.MondayNoonUtc.AddHours(1)));
     }

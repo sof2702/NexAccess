@@ -58,6 +58,8 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IPdfReportGenerator, QuestPdfReportGenerator>();
         services.AddScoped<IEmpresaLogoStorage, EmpresaLogoStorage>();
+        services.AddScoped<IMobileSessionRepository, MobileSessionRepository>();
+        services.AddScoped<IUsedMobileRefreshTokenRepository, UsedMobileRefreshTokenRepository>();
         return services;
     }
 }
