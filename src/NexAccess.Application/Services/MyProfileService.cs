@@ -19,6 +19,7 @@ public class MyProfileService
     private readonly ICredentialRepository _credentials;
     private readonly IClock _clock;
     private readonly AccessEventService _accessEvents;
+    private readonly IMobileSessionRepository _mobileSessions;
 
     public MyProfileService(
         ICurrentUser currentUser,
@@ -26,7 +27,8 @@ public class MyProfileService
         IEmployeeRepository employees,
         ICredentialRepository credentials,
         IClock clock,
-        AccessEventService accessEvents)
+        AccessEventService accessEvents,
+        IMobileSessionRepository mobileSessions)
     {
         _currentUser = currentUser;
         _users = users;
@@ -34,6 +36,7 @@ public class MyProfileService
         _credentials = credentials;
         _clock = clock;
         _accessEvents = accessEvents;
+        _mobileSessions = mobileSessions;
     }
 
     // ==========================================
@@ -158,6 +161,32 @@ public class MyProfileService
                 "CREDENTIAL_NOT_DIGITAL",
                 "Esta credencial no es digital.");
         }
+
+
+
+if (!_currentUser.SessionId.HasValue)
+{
+    throw new UnauthorizedException(
+        "MOBILE_SESSION_REQUIRED",
+        "Se requiere una sesión móvil válida.");
+}
+
+var session = await _mobileSessions.GetByIdAsync(
+    _currentUser.SessionId.Value,
+    cancellationToken);
+
+if (session is null ||
+    session.IsRevoked ||
+    session.UserId != _currentUser.UserId ||
+    !credential.InstallationId.HasValue ||
+    credential.InstallationId.Value != session.InstallationId)
+{
+    // No revelar si la credencial pertenece a otro teléfono.
+    throw new NotFoundException(
+        "Credencial",
+        credentialId);
+}
+
 
         if (credential.IsRevoked ||
             !credential.IsActive ||

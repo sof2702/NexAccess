@@ -38,6 +38,9 @@ Task<bool> RotateAndRecordTokenAsync(
     DateTime utcNow,
     CancellationToken cancellationToken = default);
 
+Task<List<MobileSession>> GetActiveByInstallationAsync(
+    Guid installationId,
+    CancellationToken cancellationToken = default);
 
 }
 

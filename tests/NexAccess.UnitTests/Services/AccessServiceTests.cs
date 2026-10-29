@@ -235,4 +235,106 @@ public class AccessServiceTests
         await Assert.ThrowsAsync<UnauthorizedException>(() => VerifyAsync());
         _factory.Events.DidNotReceiveWithAnyArgs().Add(default!);
     }
+
+[Fact]
+public async Task Rejects_digital_credential_when_installation_has_no_active_session()
+{
+    var installationId = Guid.NewGuid();
+
+    GivenCredential(c =>
+    {
+        c.Type = CredentialType.Digital;
+        c.InstallationId = installationId;
+    });
+
+    GivenPermissions(TestData.AllDayPermission());
+
+    _factory.MobileSessions
+        .GetActiveByInstallationAsync(
+            installationId,
+            Arg.Any<CancellationToken>())
+        .Returns(new List<MobileSession>());
+
+    var response = await VerifyAsync();
+
+    Assert.False(response.Authorized);
+    Assert.Equal(AccessReason.CredentialInactive, response.Reason);
+
+    _factory.Events.Received(1).Add(
+        Arg.Is<AccessEvent>(e =>
+            e.Result == AccessResult.Rechazado));
+}
+
+[Fact]
+public async Task Physical_credential_remains_valid_without_mobile_session()
+{
+    GivenCredential(c =>
+    {
+        c.Type = CredentialType.Fisica;
+        c.InstallationId = null;
+    });
+
+    GivenPermissions(TestData.AllDayPermission());
+
+    var response = await VerifyAsync();
+
+    Assert.True(response.Authorized);
+    Assert.Equal(AccessReason.Authorized, response.Reason);
+    Assert.Equal("OPEN", response.Action);
+
+    await _factory.MobileSessions
+        .DidNotReceiveWithAnyArgs()
+        .GetActiveByInstallationAsync(
+            default,
+            default);
+}
+
+
+[Fact]
+public async Task Authorizes_digital_credential_with_active_mobile_session()
+{
+    var installationId = Guid.NewGuid();
+    const long userId = 50;
+
+    GivenCredential(c =>
+    {
+        c.Type = CredentialType.Digital;
+        c.InstallationId = installationId;
+    });
+
+    GivenPermissions(TestData.AllDayPermission());
+
+    _factory.MobileSessions
+        .GetActiveByInstallationAsync(
+            installationId,
+            Arg.Any<CancellationToken>())
+        .Returns(new List<MobileSession>
+        {
+            new MobileSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                InstallationId = installationId,
+                IsActive = true
+            }
+        });
+
+    _factory.Users
+        .GetByIdAsync(userId, Arg.Any<CancellationToken>())
+        .Returns(new User
+        {
+            Id = userId,
+            EmployeeId = _employee.Id,
+            IsActive = true,
+            MobileAccessEnabled = true
+        });
+
+    var response = await VerifyAsync();
+
+    Assert.True(response.Authorized);
+    Assert.Equal(AccessReason.Authorized, response.Reason);
+    Assert.Equal("OPEN", response.Action);
+}
+
+
 }

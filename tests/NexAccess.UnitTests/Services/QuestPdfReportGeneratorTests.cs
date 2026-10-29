@@ -118,6 +118,7 @@ private sealed class MockCurrentUser :
     public long? UserId => 1;
     public long? DeviceId => null;
     public string? IpAddress => "127.0.0.1";
+    public Guid? SessionId { get; set; }
 }
 }
 

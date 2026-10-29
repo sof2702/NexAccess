@@ -167,7 +167,18 @@ public async Task<bool> RotateAndRecordTokenAsync(
     return true;
 }
 
-
+public async Task<List<MobileSession>> GetActiveByInstallationAsync(
+    Guid installationId,
+    CancellationToken cancellationToken = default)
+{
+    return await _context.MobileSessions
+        .AsNoTracking()
+        .Where(s =>
+            s.InstallationId == installationId &&
+            s.IsActive &&
+            s.RevokedAt == null)
+        .ToListAsync(cancellationToken);
+}
 
 }
 

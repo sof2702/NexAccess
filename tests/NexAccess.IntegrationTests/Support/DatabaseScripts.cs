@@ -61,29 +61,39 @@ public static async Task ApplyAsync(string connectionString)
         if (exists > 0)
             continue;
 
-        await using var transaction =
-            await connection.BeginTransactionAsync();
+        // Incorporar el registro antes del COMMIT del propio script.
+var sql = (await File.ReadAllTextAsync(file)).Trim();
 
-        // Los scripts de NexAccess incluyen BEGIN/COMMIT,
-        // por lo que se ejecutan directamente.
-        await using (var command = new NpgsqlCommand(
-            await File.ReadAllTextAsync(file),
-            connection))
-        {
-            await command.ExecuteNonQueryAsync();
-        }
+var commitMatch = System.Text.RegularExpressions.Regex.Match(
+    sql,
+    @"COMMIT\s*;\s*$",
+    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-        await using (var register = new NpgsqlCommand(
-            "INSERT INTO migracion_test (archivo) VALUES (@archivo)",
-            connection))
-        {
-            register.Parameters.AddWithValue("archivo", fileName);
-            await register.ExecuteNonQueryAsync();
-        }
+if (!System.Text.RegularExpressions.Regex.IsMatch(
+        sql,
+        @"^\s*BEGIN\s*;",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+    || !commitMatch.Success)
+{
+    throw new InvalidOperationException(
+        $"La migración {fileName} debe comenzar con BEGIN y terminar con COMMIT;");
+}
 
-        await transaction.CommitAsync();
+var sqlWithRegistration = sql.Insert(
+    commitMatch.Index,
+    "INSERT INTO migracion_test (archivo) VALUES (@archivo);\n");
+
+await using var command = new NpgsqlCommand(
+    sqlWithRegistration,
+    connection);
+
+command.Parameters.AddWithValue("archivo", fileName);
+
+await command.ExecuteNonQueryAsync();
+
+
     }
-}    
+}
 
 
 

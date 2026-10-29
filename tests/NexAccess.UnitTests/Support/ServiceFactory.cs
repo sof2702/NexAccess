@@ -24,6 +24,7 @@ public class ServiceFactory
     public IEnrollmentRepository Enrollments { get; } = Substitute.For<IEnrollmentRepository>();
     public IDeviceCommandRepository Commands { get; } = Substitute.For<IDeviceCommandRepository>();
     public IUserRepository Users { get; } = Substitute.For<IUserRepository>();
+    public IMobileSessionRepository MobileSessions { get; } = Substitute.For<IMobileSessionRepository>();
     public AccessOptions AccessOptions { get; } = new() { OpenDurationMs = 3000, TimeZoneId = "America/Asuncion" };
     public AttendanceOptions AttendanceOptions { get; } = new() { DuplicateWindowSeconds = 60, MaxReportDays = 31 };
     public EnrollmentOptions EnrollmentOptions { get; } = new() { DefaultExpirationMinutes = 5, MaxExpirationMinutes = 60 };
@@ -36,18 +37,27 @@ public class ServiceFactory
         Attendance, Employees, UnitOfWork, Audit(), CurrentUser, Clock, LocalTime, Microsoft.Extensions.Options.Options.Create(AttendanceOptions));
 
     public AccessService AccessService() => new(
-        Devices,
-        Credentials,
-        Permissions,
-        Events,
-        AttendanceService(),
-        UnitOfWork,
-        Clock,
-        LocalTime,
-        Microsoft.Extensions.Options.Options.Create(AccessOptions),
-        Microsoft.Extensions.Logging.Abstractions.NullLogger<AccessService>.Instance);
+    Devices,
+    Credentials,
+    Permissions,
+    Events,
+    AttendanceService(),
+    UnitOfWork,
+    Clock,
+    LocalTime,
+    Microsoft.Extensions.Options.Options.Create(AccessOptions),
+    Microsoft.Extensions.Logging.Abstractions.NullLogger<AccessService>.Instance,
+    MobileSessions,
+    Users);
 
-    public CredentialService CredentialService() => new(Credentials, Employees, UnitOfWork, Audit(), Clock);
+    public CredentialService CredentialService() => new(
+    Credentials,
+    Employees,
+    UnitOfWork,
+    Audit(),
+    Clock,
+    MobileSessions,
+    Users);
 
     public EmployeeService EmployeeService() => new(Employees, Roles, UnitOfWork, Audit(), Clock);
 
@@ -59,4 +69,21 @@ public class ServiceFactory
     public DeviceService DeviceService(IDeviceKeyService keys) => new(Devices, Areas, Events, keys, UnitOfWork, Audit(), Clock);
 
     public AuthService AuthService(IPasswordHasher hasher, ITokenService tokens) => new(Users, hasher, tokens, UnitOfWork, Audit(), Clock, Employees);
+
+    public IUsedMobileRefreshTokenRepository UsedMobileTokens { get; }
+    = Substitute.For<IUsedMobileRefreshTokenRepository>();
+
+   public MobileAuthService MobileAuthService(
+    IPasswordHasher hasher,
+    ITokenService tokens) => new(
+        Users,
+        Employees,
+        MobileSessions,
+        hasher,
+        tokens,
+        UnitOfWork,
+        Audit(),
+        Clock,
+        UsedMobileTokens);
+
 }

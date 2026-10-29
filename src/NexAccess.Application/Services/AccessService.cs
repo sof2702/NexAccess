@@ -24,6 +24,9 @@ public class AccessService
     private readonly LocalTime _localTime;
     private readonly AccessOptions _options;
     private readonly ILogger<AccessService> _logger;
+    private readonly IMobileSessionRepository _mobileSessions;
+    private readonly IUserRepository _users;
+
 
     public AccessService(
         IDeviceRepository devices,
@@ -35,7 +38,9 @@ public class AccessService
         IClock clock,
         LocalTime localTime,
         IOptions<AccessOptions> options,
-        ILogger<AccessService> logger)
+        ILogger<AccessService> logger,
+        IMobileSessionRepository mobileSessions,
+        IUserRepository users)
     {
         _devices = devices;
         _credentials = credentials;
@@ -47,6 +52,8 @@ public class AccessService
         _localTime = localTime;
         _options = options.Value;
         _logger = logger;
+        _mobileSessions = mobileSessions;
+        _users = users;
     }
 
     public async Task<AccessVerifyResponse> VerifyAsync(
@@ -144,6 +151,42 @@ public class AccessService
         }
 
         accessEvent.Employee = credential.Employee;
+
+if (credential.Type == CredentialType.Digital)
+{
+    if (!credential.InstallationId.HasValue)
+    {
+        return AccessReason.CredentialInactive;
+    }
+
+    var sessions = await _mobileSessions.GetActiveByInstallationAsync(
+        credential.InstallationId.Value,
+        cancellationToken);
+
+    bool authorizedInstallation = false;
+
+    foreach (var session in sessions)
+    {
+        var user = await _users.GetByIdAsync(
+            session.UserId,
+            cancellationToken);
+
+        if (user is not null &&
+            user.IsActive &&
+            user.MobileAccessEnabled &&
+            user.EmployeeId == credential.EmployeeId)
+        {
+            authorizedInstallation = true;
+            break;
+        }
+    }
+
+    if (!authorizedInstallation)
+    {
+        return AccessReason.CredentialInactive;
+    }
+}
+
 
         return device.ControlsAccess
             ? await DecideAreaAsync(device, credential.EmployeeId, now, cancellationToken)

@@ -286,16 +286,35 @@ public async Task LogoutAsync(
         SHA256.HashData(
             Encoding.UTF8.GetBytes(token)));
 
-    var session = await _sessions.GetByRefreshTokenHashAsync(
+var session = await _sessions.GetByRefreshTokenHashAsync(
+    tokenHash,
+    cancellationToken);
+
+if (session is null)
+{
+    // Buscar si el token pertenece a una sesión
+    // cuyo refresh token ya fue rotado.
+    var usedToken = await _usedTokens.FindByHashAsync(
         tokenHash,
         cancellationToken);
 
-    // Respuesta idempotente: una sesión inexistente
-    // o previamente revocada no produce error.
-    if (session is null || session.IsRevoked)
+    if (usedToken is null)
     {
+        // Token desconocido: respuesta idempotente.
         return;
     }
+
+    session = await _sessions.GetByIdAsync(
+        usedToken.SessionId,
+        cancellationToken);
+}
+
+// Una sesión inexistente o revocada
+// no necesita procesarse nuevamente.
+if (session is null || session.IsRevoked)
+{
+    return;
+}
 
     var revoked = await _sessions.RevokeAsync(
         session.Id,

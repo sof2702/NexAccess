@@ -17,19 +17,26 @@ public class CredentialService
     private readonly IUnitOfWork _unitOfWork;
     private readonly AuditService _audit;
     private readonly IClock _clock;
+    private readonly IMobileSessionRepository _mobileSessions;
+    private readonly IUserRepository _users;
+
 
     public CredentialService(
         ICredentialRepository credentials,
         IEmployeeRepository employees,
         IUnitOfWork unitOfWork,
         AuditService audit,
-        IClock clock)
+        IClock clock,
+        IMobileSessionRepository mobileSessions,
+        IUserRepository users)
     {
         _credentials = credentials;
         _employees = employees;
         _unitOfWork = unitOfWork;
         _audit = audit;
         _clock = clock;
+        _mobileSessions = mobileSessions;
+        _users = users;
     }
 
     public async Task<PagedResult<CredentialResponse>> SearchAsync(CredentialQuery query, CancellationToken cancellationToken = default)
@@ -151,6 +158,46 @@ public async Task<DigitalCredentialResponse> IssueDigitalAsync(
 
     ModelValidator.Validate(request);
 
+    if (!request.InstallationId.HasValue ||
+    request.InstallationId.Value == Guid.Empty)
+{
+    throw new AppValidationException(
+        "installationId",
+        "Debe indicar una instalación Android válida.");
+}
+
+var installationId = request.InstallationId.Value;
+
+var sessions = await _mobileSessions.GetActiveByInstallationAsync(
+    installationId,
+    cancellationToken);
+
+bool authorizedInstallation = false;
+
+foreach (var session in sessions)
+{
+    var user = await _users.GetByIdAsync(
+        session.UserId,
+        cancellationToken);
+
+    if (user is not null &&
+        user.IsActive &&
+        user.MobileAccessEnabled &&
+        user.EmployeeId == employeeId)
+    {
+        authorizedInstallation = true;
+        break;
+    }
+}
+
+if (!authorizedInstallation)
+{
+    throw new BusinessRuleException(
+        "INSTALLATION_NOT_AUTHORIZED",
+        "La instalación Android no pertenece a una sesión móvil activa del empleado.");
+}
+
+
     var employee = await _employees.GetByIdAsync(
         employeeId,
         cancellationToken)
@@ -167,6 +214,8 @@ public async Task<DigitalCredentialResponse> IssueDigitalAsync(
         request.Name ?? "Credencial móvil",
         DateRange.ToUtc(request.ExpiresAt),
         cancellationToken);
+
+    credential.InstallationId = installationId;
 
     await _unitOfWork.SaveChangesAsync(cancellationToken);
 

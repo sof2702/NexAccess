@@ -13,6 +13,7 @@ public class CredentialConfiguration : IEntityTypeConfiguration<Credential>
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id).HasColumnName("id").UseSerialColumn();
         builder.Property(c => c.EmployeeId).HasColumnName("id_empleado");
+        builder.Property(c => c.InstallationId).HasColumnName("instalacion_id");
         builder.Property(c => c.CredentialCode).HasColumnName("codigo_credencial").HasMaxLength(150).IsRequired();
         builder.Property(c => c.Type).HasColumnName("tipo").HasMaxLength(20).HasConversion(new UpperSnakeEnumConverter<CredentialType>());
         builder.Property(c => c.Name).HasColumnName("nombre").HasMaxLength(100);

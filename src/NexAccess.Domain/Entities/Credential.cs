@@ -6,6 +6,7 @@ public class Credential
 {
     public long Id { get; set; }
     public long EmployeeId { get; set; }
+    public Guid? InstallationId { get; set; }
     public string CredentialCode { get; set; } = string.Empty;
     public CredentialType Type { get; set; } = CredentialType.Fisica;
     public string? Name { get; set; }
