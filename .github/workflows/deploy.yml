@@ -61,7 +61,10 @@ jobs:
         shell: bash
         run: |
           curl --fail --silent --show-error \
-            http://127.0.0.1:8060/api/v1/health
+            --retry 10 \
+            --retry-delay 3 \
+            --retry-connrefused \
+            http://192.168.0.6:8060/api/v1/health
 
       - name: Confirmar despliegue
         run: echo "NexAccess desplegado correctamente"
